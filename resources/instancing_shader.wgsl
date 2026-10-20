@@ -98,8 +98,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
         let normal = normalize(in.normal);
         let diffuse_color = diffuse * lightingUniforms.diffuse_intensity * max(dot(normal, light_dir), 0.0);
         let specular_color = lightingUniforms.specular * lightingUniforms.specular_intensity * pow(max(dot(reflect(-light_dir, normal), normalize(renderUniforms.cameraWorldPosition - in.worldpos)), 0.0), lightingUniforms.alpha);
-
-        color = lightingUniforms.ambient * lightingUniforms.ambient_intensity + diffuse_color + specular_color;
+        let ambiant_color = diffuse * lightingUniforms.ambient * lightingUniforms.ambient_intensity;
+        color = ambiant_color + diffuse_color + specular_color;
     }
 	// Gamma-correction
     let corrected_color = pow(color, vec3f(2.2));
