@@ -1,29 +1,41 @@
 #include "Scene.h"
-#include <random>
+#include <glm/gtx/quaternion.hpp>
 
+struct MassPoint
+{
+    float mass;
+    glm::vec3 position;
+    glm::vec3 velocity;
+};
+
+struct Spring
+{
+    float stiffness;
+    float restLength;
+};
 
 class Scene1 : public Scene
 {
-    // Rotation of the cube
-    float pitch = 0.f;
-    float roll = 0.f;
-    float yaw = 0.f;
+    float timeStep = 0.1f;
 
-    // Increments for the rotation
-    float pitch_increment = 0.005f;
-    float roll_increment = 0.005f;
-    float yaw_increment = 0.005f;
+    MassPoint x0 = MassPoint{
+        10.f,
+        glm::vec3(0),
+        glm::vec3(-1,0,0)
+    };
+    MassPoint x1 = MassPoint{
+        10.f,
+        glm::vec3(0,2,0),
+        glm::vec3(1,0,0)
+    };
+    Spring s = Spring{
+        40.f,
+        1.f
+    };
 
-    // Limits the number of particles at the same time
-    int32_t launch_delay = 8;
-    int32_t lastLaunch = 0;
-
-    // Methods from Scene
-    virtual void onDraw(Renderer &renderer) override;
-    virtual void simulateStep() override;
-    virtual void onGUI() override;
-
-    // Additional methods
-    void launchSphere();
-
+    glm::vec3 SpringForce(Spring spring, float currentLength, glm::vec3 direction);
+    glm::vec3 PFD(float mass, glm::vec3 force);
+    void OneStepEuler(MassPoint &massPoint1, MassPoint &massPoint2, Spring spring);
+    void OneStepMidpoint(MassPoint &massPoint1, MassPoint & massPoint2, Spring spring);
+    virtual void init() override;
 };

@@ -1,132 +1,103 @@
 #include "Scene1.h"
 #include <glm/gtx/quaternion.hpp>
-#include <imgui.h>
+#include <cmath>
 
-void Scene1::onDraw(Renderer &renderer) {
-    // Get camera information
-    cameraMatrix = renderer.camera.viewMatrix;
-    fwd = inverse(cameraMatrix) * glm::vec4(0, 0, 1, 0);
-    right = inverse(cameraMatrix) * glm::vec4(1, 0, 0, 0);
-    up = inverse(cameraMatrix) * glm::vec4(0, 1, 0, 0);
 
-    // Large white wire cube
-    renderer.drawWireCube(glm::vec3(0), glm::vec3(5), glm::vec3(1));
-    
-    // Smaller cube inside
-    renderer.drawCube(
-        glm::vec3(0,0,0),
-        glm::quat(glm::vec3(pitch, roll, yaw)),     // rotation now given by Euler angle
-        glm::vec3(0.5,0.5,0.5),
-        glm::vec4(0.8,0.4,0,0.9));
-
-    // The cube's local coordinates
-    glm::mat4 rotation = glm::toMat4(glm::quat(glm::vec3(pitch, roll, yaw)));
-    glm::vec3 forward = glm::vec3(rotation * glm::vec4(0, 0, 1, 0));
-    glm::vec3 right = glm::vec3(rotation * glm::vec4(1, 0, 0, 0));
-    glm::vec3 up = glm::vec3(rotation * glm::vec4(0, 1, 0, 0));
-
-    renderer.drawLine(glm::vec3(0), forward, glm::vec4(1, 0, 0, 1));
-    renderer.drawLine(glm::vec3(0), right, glm::vec4(0, 1, 0, 1));
-    renderer.drawLine(glm::vec3(0), up, glm::vec4(0, 0, 1, 1));
-
-    // Draw the particles, their colors depend on their lifetime
-    auto cmap = Colormap("viridis");
-
-    for (auto& particle : particles){
-        renderer.drawSphere(particle.position, 0.1f, glm::vec4(cmap(particle.lifetime / 1.5f), 1));
-    }
+glm::vec3 Scene1::SpringForce(Spring spring, float l, glm::vec3 direction) {
+    return spring.stiffness * (spring.restLength-l) * direction;
 }
 
-// Creates movement / animation
-void Scene1::simulateStep() {
-    // General actions common to every scene
-    Scene::simulateStep();
-
-    // Rotation of the cube
-    //pitch += pitch_increment;
-    //roll += roll_increment;
-    //yaw += yaw_increment;
-
-    // Additional force from the mouse
-    if(ImGui::IsMouseReleased(ImGuiMouseButton_Right)){   
-        auto drag = ImGui::GetMouseDragDelta(1);
-        if(!(drag.x == 0 && drag.y == 0)){
-            auto dx = drag.x * right;
-            auto dy = -drag.y * up;
-            for (auto& particle : particles){
-                particle.velocity += (dx + dy) * 0.01f;
-            }
-        }
-    }
-
-    // Removes all particles whose lifetime is more than 1s
-    particles.erase(std::remove_if(particles.begin(), particles.end(), [](const Particle& particle){
-        return particle.lifetime > 2.5f;
-        }), particles.end());
-
-    // Creates particle or rotate the cube when a key is pressed 
-    if(ImGui::IsKeyDown(ImGuiKey_Space))
-        launchSphere();
-    if(ImGui::IsKeyDown(ImGuiKey_W))
-        pitch += pitch_increment;
-    if(ImGui::IsKeyDown(ImGuiKey_S))
-        pitch -= pitch_increment;
-    if(ImGui::IsKeyDown(ImGuiKey_A))
-        roll += roll_increment;
-    if(ImGui::IsKeyDown(ImGuiKey_D))
-        roll -= roll_increment;
-    if(ImGui::IsKeyDown(ImGuiKey_Q))
-        yaw += yaw_increment;
-    if(ImGui::IsKeyDown(ImGuiKey_E))
-        yaw -= yaw_increment;
-
-
-    // Time since the last launch
-    lastLaunch++;
-    
+glm::vec3 Scene1::PFD(float m, glm::vec3 F) {
+    return F / m;
 }
 
-// User interface
-void Scene1::onGUI() {
-    // Sliders
-    ImGui::SliderFloat("Pitch Increment", &pitch_increment, -0.01f, 0.01f);
-    ImGui::SliderFloat("Roll Increment", &roll_increment, -0.01f, 0.01f);
-    ImGui::SliderFloat("Yaw Increment", &yaw_increment, -0.01f, 0.01f);
-    ImGui::SliderInt("Launch Delay", &launch_delay, 0, 100);
+void Scene1::OneStepEuler(MassPoint &point0, MassPoint &point1, Spring spring) {
+    float distance = glm::distance(point0.position, point1.position);
+    glm::vec3 direction = (point1.position - point0.position)/distance;   // from x0 to x1 
+    glm::vec3 f1 = SpringForce(spring, distance, direction);
+    glm::vec3 f0 = -f1;
+    glm::vec3 a0 = PFD(point0.mass, f0);
+    glm::vec3 a1 = PFD(point1.mass, f1);
 
-    //auto launch = ImGui::Button("Launch");  // launch true when the button is pressed
-    // Creates a particle when launch is true, without delay
-    //if(launch)
-    //    launchSphere();
+    // For Euler, first we use the actual velocity to compute the next position, then we use the actual acceleration to compute the next velocity
+    point0.position = point0.position + timeStep*point0.velocity;
+    point0.velocity = point0.velocity + timeStep*a0;
 
+    point1.position = point1.position + timeStep*point1.velocity;
+    point1.velocity = point1.velocity + timeStep*a1;
 }
 
-// Creates a particle if enough time has passed
-void Scene1::launchSphere(){
-    if( lastLaunch < launch_delay)
-        return;
-
-    lastLaunch = 0;
-    // Directions
-    glm::mat4 rotation = glm::toMat4(glm::quat(glm::vec3(pitch, roll, yaw)));
-    glm::vec3 forward = glm::vec3(rotation * glm::vec4(0, 0, 1, 0));
-    glm::vec3 right = glm::vec3(rotation * glm::vec4(1, 0, 0, 0));
-    glm::vec3 up = glm::vec3(rotation * glm::vec4(0, 1, 0, 0));
-
-    // Random color
-    glm::vec4 color = glm::vec4(dis(gen), dis(gen), dis(gen), 1);
+void Scene1::OneStepMidpoint(MassPoint &point0, MassPoint &point1, Spring spring) {
+    float distance = glm::distance(point0.position, point1.position);
+    glm::vec3 direction = (point1.position - point0.position)/distance;   // from x0 to x1 
     
-    // Initial velocity with some randomness
-    float velocityMagnitude = 3.5f + dis(gen);
-    glm::vec3 velocity = forward * velocityMagnitude;
-    velocity += right * (dis(gen) - 0.5f) * 2.f;
-    velocity += up * (dis(gen) - 0.5f) * 2.f;
+    // Intermediate half step
+    glm::vec3 f1 = SpringForce(spring, distance, direction);
+    glm::vec3 f0 = -f1;
+    glm::vec3 a0 = PFD(point0.mass, f0);
+    glm::vec3 a1 = PFD(point1.mass, f1);
 
-    // Adds the particle to the list
-    particles.push_back(Particle{
+    glm::vec3 pos0_ = point0.position + (timeStep/2)*point0.velocity;
+    glm::vec3 vel0_ = point0.velocity + (timeStep/2)*a0;
+
+    glm::vec3 pos1_ = point1.position + (timeStep/2)*point1.velocity;
+    glm::vec3 vel1_ = point1.velocity + (timeStep/2)*a1;
+
+    // Computing acceleration for the half step
+    distance = glm::distance(pos0_, pos1_);
+    direction = (point1.position - point0.position)/distance;
+    f1 = SpringForce(spring, distance, direction);
+    f0 = -f1;
+    a0 = PFD(point0.mass, f0);
+    a1 = PFD(point1.mass, f1);
+
+    // Position after full step
+    point0.position = point0.position + timeStep*vel0_;
+    point1.position = point1.position + timeStep*vel1_;
+
+    // Velocity after full step
+    point0.velocity = point0.velocity + timeStep*a0;
+    point1.velocity = point1.velocity + timeStep*a1;
+}
+
+void Scene1::init() {
+    std::cout << "Initial Values:" << std::endl;
+    std::cout << "Masspoint 0" << std::endl;
+    std::cout << "position: (" << x0.position.x << ", " << x0.position.y << ", " << x0.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x0.velocity.x << ", " << x0.velocity.y << ", " << x0.velocity.z << ")" << std::endl;
+    std::cout << "Masspoint 1" << std::endl;
+    std::cout << "position: (" << x1.position.x << ", " << x1.position.y << ", " << x1.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x1.velocity.x << ", " << x1.velocity.y << ", " << x1.velocity.z << ")" << std::endl;
+
+    OneStepMidpoint(x0, x1, s);
+    
+    std::cout << "After " << timeStep << "s using Midpoint Method:" << std::endl;
+    std::cout << "Masspoint 0" << std::endl;
+    std::cout << "position: (" << x0.position.x << ", " << x0.position.y << ", " << x0.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x0.velocity.x << ", " << x0.velocity.y << ", " << x0.velocity.z << ")" << std::endl;
+    std::cout << "Masspoint 1" << std::endl;
+    std::cout << "position: (" << x1.position.x << ", " << x1.position.y << ", " << x1.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x1.velocity.x << ", " << x1.velocity.y << ", " << x1.velocity.z << ")" << std::endl;
+
+    // Initial values
+    x0 = MassPoint{
+        10.f,
         glm::vec3(0),
-        velocity,
-        color,
-        .0 // Particles are created with their own time counter set to 0
-    });
+        glm::vec3(-1,0,0)
+    };
+    x1 = MassPoint{
+        10.f,
+        glm::vec3(0,2,0),
+        glm::vec3(1,0,0)
+    };
+
+    OneStepEuler(x0, x1, s);
+
+    std::cout << "After " << timeStep << "s using Euler Method:" << std::endl;
+    std::cout << "Masspoint 0" << std::endl;
+    std::cout << "position: (" << x0.position.x << ", " << x0.position.y << ", " << x0.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x0.velocity.x << ", " << x0.velocity.y << ", " << x0.velocity.z << ")" << std::endl;
+    std::cout << "Masspoint 1" << std::endl;
+    std::cout << "position: (" << x1.position.x << ", " << x1.position.y << ", " << x1.position.z << ")" << std::endl;
+    std::cout << "velocity: (" << x1.velocity.x << ", " << x1.velocity.y << ", " << x1.velocity.z << ")" << std::endl;
 }
