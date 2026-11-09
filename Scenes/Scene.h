@@ -11,6 +11,19 @@ struct Particle
     float lifetime;
 };
 
+struct MassPoint
+{
+    float mass;
+    glm::vec3 position;
+    glm::vec3 velocity;
+};
+
+struct Spring
+{
+    float stiffness;
+    float restLength;
+};
+
 /// @brief Scene base class. **Run `cmake . -B build` after adding new files to the scenes folder**
 ///
 /// This class is the base class for all scenes in the application.

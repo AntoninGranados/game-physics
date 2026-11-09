@@ -1,18 +1,6 @@
 #include "Scene.h"
 #include <glm/gtx/quaternion.hpp>
 
-struct MassPoint
-{
-    float mass;
-    glm::vec3 position;
-    glm::vec3 velocity;
-};
-
-struct Spring
-{
-    float stiffness;
-    float restLength;
-};
 
 class Scene1 : public Scene
 {
