@@ -1,8 +1,8 @@
-#include "Scene2.h"
+#include "Scene6.h"
 #include <imgui.h>
 #include <glm/gtx/quaternion.hpp>
 
-void Scene2::initializeCloth() {
+void Scene6::initializeCloth() {
 
     cloth = Cloth();
     cloth.color = glm::vec4(0.7, 0.1, 0.1, 1);
@@ -38,11 +38,11 @@ void Scene2::initializeCloth() {
     }
 }
 
-void Scene2::init() {
+void Scene6::init() {
     initializeCloth();
 }
 
-void Scene2::simulateStep() {
+void Scene6::simulateStep() {
 
     float realtimeDt = ImGui::GetIO().DeltaTime;
 
@@ -123,7 +123,7 @@ void Scene2::simulateStep() {
     }
 }
 
-void Scene2::onDraw(Renderer& renderer) {
+void Scene6::onDraw(Renderer& renderer) {
 
     cameraMatrix = renderer.camera.viewMatrix;
     projectionMatrix = renderer.camera.projectionMatrix();
@@ -147,7 +147,7 @@ void Scene2::onDraw(Renderer& renderer) {
     }
 }
 
-void Scene2::onGUI() {
+void Scene6::onGUI() {
     ImGui::Text("Cloth Simulation Parameters");
     ImGui::SliderInt("Width", &width, 2, 50);
     ImGui::SliderInt("Height", &height, 2, 50);

@@ -8,7 +8,7 @@ struct Particle {
     float lifetime;
 };
 
-class Scene1 : public Scene {
+class Scene5 : public Scene {
 
     // emitter's movement parameters
     float pitch = 0.f;
@@ -45,5 +45,5 @@ class Scene1 : public Scene {
 
 public:
 
-    Scene1() : gen(rd()), dis(0.f, 1.f) {}
+    Scene5() : gen(rd()), dis(0.f, 1.f) {}
 };

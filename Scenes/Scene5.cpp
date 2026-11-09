@@ -1,8 +1,8 @@
-#include "Scene1.h"
+#include "Scene5.h"
 #include <imgui.h>
 #include <glm/gtx/quaternion.hpp>
 
-void Scene1::drawEmitter(Renderer& renderer) {
+void Scene5::drawEmitter(Renderer& renderer) {
 
     // compute the emitter's local axes
     glm::quat e_rotation = glm::quat(glm::vec3(pitch, roll, yaw));
@@ -34,7 +34,7 @@ void Scene1::drawEmitter(Renderer& renderer) {
     renderer.drawLine(glm::vec3(0), e_up, glm::vec4(0, 0, 1, 1));
 }
 
-void Scene1::launchSphere() {
+void Scene5::launchSphere() {
 
     // only launch if enough time has passed since the last launch
     if (lastLaunch < launch_delay)
@@ -56,7 +56,7 @@ void Scene1::launchSphere() {
     particles.push_back(Particle{glm::vec3(0), velocity, color, 0.0});
 }
 
-void Scene1::simulateStep() {
+void Scene5::simulateStep() {
 
     float realtimeDt = ImGui::GetIO().DeltaTime;
 
@@ -103,7 +103,7 @@ void Scene1::simulateStep() {
     lastLaunch++;
 }
 
-void Scene1::onDraw(Renderer& renderer) {
+void Scene5::onDraw(Renderer& renderer) {
 
     // update the camera matrix and the axes based on the camera position
     cameraMatrix = renderer.camera.viewMatrix;
@@ -129,7 +129,7 @@ void Scene1::onDraw(Renderer& renderer) {
     }
 }
 
-void Scene1::onGUI() {
+void Scene5::onGUI() {
 
     // sliders to control the emitter's movement
     ImGui::SliderFloat("Pitch Increment", &pitch_increment, -0.01f, 0.01f);

@@ -20,7 +20,7 @@ struct Cloth {
     int32_t height;
 };
 
-class Scene2 : public Scene {
+class Scene6 : public Scene {
 
     Cloth cloth;
 
