@@ -5,11 +5,14 @@
 
 void Scene4::onDraw(Renderer &renderer) {
     for(auto &point: massPoints) {
-        renderer.drawSphere(point.position, 0.1f, glm::vec4(0.8,0.4,0,0.9), 1);
+        renderer.drawSphere(point.position, radius, glm::vec4(0.8,0.4,0,1), 1);
     }
     for(auto &spring: springs) {
         renderer.drawLine(massPoints[spring.ind1].position, massPoints[spring.ind2].position, glm::vec3(1,0,0));
     }
+
+    renderer.drawQuad(floor.position, floor.rotationAngles, glm::vec2(scale, scale), floor.color);
+
 }
 
 void Scene4::simulateStep() {
@@ -22,6 +25,9 @@ void Scene4::simulateStep() {
         //timeStep = 0.1f;
         OneStepMidpoint();
     }
+
+    // Check collisions
+    CheckCollisionFloor();
 }
 
 void Scene4::onGUI() {
@@ -76,7 +82,7 @@ void Scene4::Forces(std::vector<MassPoint> &pointsList) {
     GravityForce(pointsList);
     SpringForces(pointsList);
 
-    // If the mass in the center is fixed
+    // If the mass in the center is fixed (other ways to do to avoid computation)
     pointsList[0].acceleration = glm::vec3(0);
 }
 
@@ -135,7 +141,7 @@ void Scene4::OneStepMidpoint() {
     }
 
     // Computing acceleration for the half step
-    SpringForces(pointsList);
+    Forces(pointsList);
     
     // Characteristics after full step
     for(int i=0; i<std::size(massPoints); i++) {
@@ -144,5 +150,15 @@ void Scene4::OneStepMidpoint() {
         massPoints[i].velocity += timeStep*point.acceleration;
         // Acceleration back to 0 for next step
         massPoints[i].acceleration = glm::vec3(0);
+    }
+}
+
+
+void Scene4::CheckCollisionFloor() {
+    // Only works for the floor, general planes need another method (with surface normal)
+    for(auto &point : massPoints) {
+        if(point.position.z - radius <= floorHeight) {
+            point.position.z = floorHeight + radius;
+        }
     }
 }

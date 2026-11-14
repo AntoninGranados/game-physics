@@ -8,6 +8,12 @@ struct OtherSpring{
     int ind1;
     int ind2;
 };
+
+struct Plane{
+    glm::vec3 position;
+    glm::vec3 rotationAngles;   // Pitch, roll, yaw
+    glm::vec4 color;
+};
     
 
 class Scene4 : public Scene
@@ -16,14 +22,26 @@ class Scene4 : public Scene
 
     // Characteristics of the springs and the mass points
     float mass = 10.f;
-    float bigMass = 100000.f;
-    float stiffness = 100.f;
+    float bigMass = 10000.f;
+    float stiffness = 80.f;
     float restLength = 1.f;
+
+    // Size of the particles
+    float radius = 0.1f;
 
     // List of mass points in the scene
     std::vector<MassPoint> massPoints;
     // List of springs in the scene
     std::vector<OtherSpring> springs;
+
+    // Floor
+    float floorHeight = -2.5f;
+    float scale = 10.f;
+    Plane floor = Plane{
+        glm::vec3(0,0,floorHeight),
+        glm::vec3(0,0,0),
+        glm::vec4(0.9, 0.9, 0.9,0.7)
+    };
 
     // Which method is used (0=Euler, 1=Midpoint, 2=Leap-Frog)
     int method = 0;
@@ -43,5 +61,7 @@ class Scene4 : public Scene
     
     void OneStepEuler();
     void OneStepMidpoint();
+
+    void CheckCollisionFloor();
 
 };
