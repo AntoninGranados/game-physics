@@ -13,28 +13,45 @@ void Scene4::onDraw(Renderer &renderer) {
 }
 
 void Scene4::simulateStep() {
-    if(method == 0) {OneStepEuler();}
+    if(method == 0) {
+        //timeStep = 0.005f;  // For UI debugging
+        OneStepEuler();
+    }
 
-    else if(method==1) {OneStepMidpoint();}
+    else if(method==1) {
+        //timeStep = 0.1f;
+        OneStepMidpoint();
+    }
 }
 
 void Scene4::onGUI() {
+    // Choice for the method
+    ImGui::RadioButton("Euler", &method, 0);
+    ImGui::RadioButton("Midpoint", &method, 1);
+
+    // TimeStep
+    ImGui::SliderFloat("Time step", &timeStep, 0.f, 0.05f);
+
+    /*
+    // Don't work here since the characteristics for each objects are defined once when the object is created (in struct)
+    // We can use these general characteristics in the formulas instead of the objects' characteristics if we want to change them during the simulation
+    ImGui::SliderFloat("Big mass", &bigMass, 0.1f, 50000.f);
+    ImGui::SliderFloat("Masses", &mass, 0.001f, 1000.f);
+    ImGui::SliderFloat("Stiffness", &stiffness, 0.f, 1000.f);
+    ImGui::SliderFloat("Rest Length", &restLength, 0.1f, 50.f);
+    */
 
 }
 
 void Scene4::init() {
     // One big mass in the center and every other around and linked to it
     MassPoint x0 = MassPoint{
-        10000.f,
+        bigMass,
         glm::vec3(0),
         glm::vec3(0),
         glm::vec3(0)
     };
     massPoints.push_back(x0);
-
-    float mass = 10.f;
-    float stiffness = 10.f;
-    float restLength = 1.f;
 
     for(int i=1; i<10; i++) {
         glm::vec3 position = glm::vec3((dis(gen)-0.5)*4.f, (dis(gen)-0.5)*4.f, (dis(gen)-0.5)*4.f);
@@ -54,6 +71,16 @@ void Scene4::init() {
     }
 }
 
+
+void Scene4::Forces(std::vector<MassPoint> &pointsList) {
+    GravityForce(pointsList);
+    SpringForces(pointsList);
+
+    // If the mass in the center is fixed
+    pointsList[0].acceleration = glm::vec3(0);
+}
+
+
 void Scene4::SpringForces(std::vector<MassPoint> &pointsList) {
     for(OtherSpring spring: springs) {
         MassPoint point1 = pointsList[spring.ind1];
@@ -63,21 +90,26 @@ void Scene4::SpringForces(std::vector<MassPoint> &pointsList) {
     
         glm::vec3 f2 = spring.stiffness * (spring.restLength-distance) * direction;
         glm::vec3 f1 = -f2;
-        glm::vec3 a1 = PFD(point1.mass, f1);
-        glm::vec3 a2 = PFD(point2.mass, f2);
+        glm::vec3 a1 = f1/point1.mass;
+        glm::vec3 a2 = f2/point2.mass;
 
         pointsList[spring.ind1].acceleration += a1;
         pointsList[spring.ind2].acceleration += a2;
     }
 }
 
-glm::vec3 Scene4::PFD(float m, glm::vec3 F) {
-    return F / m;
+
+void Scene4::GravityForce(std::vector<MassPoint> &pointsList) {
+    glm::vec3 gravityAccel = glm::vec3(0, 0, -9.81f);
+    for (auto& point : pointsList){
+        point.acceleration += gravityAccel;
+    }
 }
+
 
 void Scene4::OneStepEuler() {
     // Computing all forces for every point
-    SpringForces(massPoints);
+    Forces(massPoints);
 
     for(auto &point: massPoints) {
         point.position += timeStep*point.velocity;
@@ -93,7 +125,7 @@ void Scene4::OneStepMidpoint() {
     // Intermediate list for half step
     std::vector<MassPoint> pointsList = massPoints;
 
-    SpringForces(pointsList);
+    Forces(pointsList);
 
     for(auto &point: pointsList) {
         point.position += (timeStep/2)*point.velocity;
@@ -105,7 +137,7 @@ void Scene4::OneStepMidpoint() {
     // Computing acceleration for the half step
     SpringForces(pointsList);
     
-    // Caracteristics after full step
+    // Characteristics after full step
     for(int i=0; i<std::size(massPoints); i++) {
         MassPoint point = pointsList[i];
         massPoints[i].position += timeStep*point.velocity;
