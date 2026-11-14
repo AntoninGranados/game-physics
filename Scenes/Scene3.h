@@ -8,12 +8,14 @@ class Scene3 : public Scene
     MassPoint x0 = MassPoint{
         10.f,
         glm::vec3(0),
-        glm::vec3(-1.,0.,0.)
+        glm::vec3(-1.,0.,0.),
+        glm::vec3(0)
     };
     MassPoint x1 = MassPoint{
         10.f,
         glm::vec3(0.f,2.f,0.f),
-        glm::vec3(1.f,0.f,0.f)
+        glm::vec3(1.f,0.f,0.f),
+        glm::vec3(0)
     };
     Spring s = Spring{
         40.f,
