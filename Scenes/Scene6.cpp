@@ -23,13 +23,13 @@ void Scene6::initializeCloth() {
         for (int x = 0; x < cloth.width; x++) {
             int index = y * cloth.width + x;
             if (x < cloth.width - 1) {
-                Spring spring;
+                Spring6 spring;
                 spring.joint1 = index;
                 spring.joint2 = index + 1;
                 cloth.springs.push_back(spring);
             }
             if (y < cloth.height - 1) {
-                Spring spring;
+                Spring6 spring;
                 spring.joint1 = index;
                 spring.joint2 = index + cloth.width;
                 cloth.springs.push_back(spring);

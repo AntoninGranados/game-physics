@@ -7,14 +7,14 @@ struct Joint {
     bool isFixed;
 };
 
-struct Spring {
+struct Spring6 {
     int joint1;
     int joint2;
 };
 
 struct Cloth {
     std::vector<Joint> joints;
-    std::vector<Spring> springs;
+    std::vector<Spring6> springs;
     glm::vec4 color;
     int32_t width;
     int32_t height;
