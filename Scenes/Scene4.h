@@ -23,6 +23,8 @@ class Scene4 : public Scene {
     std::vector<Point4> pointsMidpoint;
     std::vector<Spring4> springsMidpoint;
 
+    Point4 collider;
+
     int width = 10;
     int height = 10;
 

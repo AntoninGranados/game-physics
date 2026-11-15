@@ -9,6 +9,12 @@ void Scene4::init() {
     pointsMidpoint.clear();
     springsMidpoint.clear();
 
+    collider.position = glm::vec3(0, -1, 0);
+    collider.velocity = glm::vec3(0);
+    collider.acceleration = glm::vec3(0);
+    collider.radius = 1.0f;
+    collider.isFixed = true;
+
     // create every point in a grid pattern with the top row fixed in place
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -63,21 +69,6 @@ void Scene4::oneStepEuler() {
         point.acceleration = glm::vec3(0);
     }
 
-    // detect collisions
-    for (size_t i = 0; i < pointsEuler.size(); i++) {
-        for (size_t j = 0; j < i; j++) {
-            Point4 point1 = pointsEuler[i];
-            Point4 point2 = pointsEuler[j];
-            float distance = glm::length(point2.position - point1.position);
-            glm::vec3 direction = glm::normalize(point2.position - point1.position);
-            if (distance < point1.radius + point2.radius) {
-                float overlap = point1.radius + point2.radius - distance;
-                pointsEuler[i].position += - direction * overlap / 2.0f;
-                pointsEuler[j].position += direction * overlap / 2.0f;
-            }
-        }
-    }
-
     // compute the force applied by the spring to each point linked to this spring
     for (Spring4& spring : springsEuler) {
 
@@ -99,6 +90,16 @@ void Scene4::oneStepEuler() {
             point.velocity = glm::vec3(0);
         }
         point.position += point.velocity * deltaTime;
+    }
+
+    // detect collisions with collider
+    for (Point4& point: pointsEuler) {
+        float distance = glm::length(point.position - collider.position);
+        if (distance < point.radius + collider.radius) {
+            glm::vec3 direction = glm::normalize(point.position - collider.position);
+            float overlap = point.radius + collider.radius - distance;
+            point.position += direction * overlap;
+        }
     }
 }
 
@@ -156,6 +157,16 @@ void Scene4::oneStepMidpoint() {
         point.acceleration += glm::vec3(0, 0, gravity) - damping * point.velocity_tmp / mass;
         point.velocity += point.acceleration * deltaTime;
     }
+
+    // detect collisions with collider
+    for (Point4& point: pointsMidpoint) {
+        float distance = glm::length(point.position - collider.position);
+        if (distance < point.radius + collider.radius) {
+            glm::vec3 direction = glm::normalize(point.position - collider.position);
+            float overlap = point.radius + collider.radius - distance;
+            point.position += direction * overlap;
+        }
+    }
 }
 
 void Scene4::simulateStep() {
@@ -163,7 +174,18 @@ void Scene4::simulateStep() {
     oneStepEuler();
     oneStepMidpoint();
 
-    // TODO: mouse
+    if (ImGui::IsKeyDown(ImGuiKey_W))
+        collider.position.x += 0.01f;
+    if (ImGui::IsKeyDown(ImGuiKey_S))
+        collider.position.x -= 0.01f;
+    if (ImGui::IsKeyDown(ImGuiKey_A))
+        collider.position.y += 0.01f;
+    if (ImGui::IsKeyDown(ImGuiKey_D))
+        collider.position.y -= 0.01f;
+    if (ImGui::IsKeyDown(ImGuiKey_Q))
+        collider.position.z += 0.01f;
+    if (ImGui::IsKeyDown(ImGuiKey_E))
+        collider.position.z -= 0.01f;
 }
 
 void Scene4::onDraw(Renderer& renderer) {
@@ -187,6 +209,9 @@ void Scene4::onDraw(Renderer& renderer) {
     for (Point4& point : pointsMidpoint) {
         renderer.drawSphere(point.position, point.radius, midpointColor);
     }
+
+    // draw the collider
+    renderer.drawSphere(collider.position, collider.radius, glm::vec4(0, 0, 1, 1));
 }
 
 void Scene4::onGUI() {
@@ -204,7 +229,7 @@ void Scene4::onGUI() {
 
     ImGui::Text("Simulation parameters");
     ImGui::SliderFloat("Delta time", &deltaTime, 0.001f, 0.01f);
-    ImGui::SliderFloat("Damping", &damping, 0.0f, 1.0f);
+    ImGui::SliderFloat("Damping", &damping, 0.0f, 10.0f);
 
     auto initialize = ImGui::Button("Initialize");
     auto switchMethod = ImGui::Button("Switch between Euler and Midpoint");
