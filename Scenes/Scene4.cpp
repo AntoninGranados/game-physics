@@ -86,6 +86,9 @@ void Scene4::oneStepEuler() {
     for (Point4& point : pointsEuler) {
         point.acceleration += glm::vec3(0, 0, gravity) - damping * point.velocity / mass;
         point.velocity += point.acceleration * deltaTime;
+        if (glm::length(point.velocity) > maxVelocity) {
+            point.velocity = glm::normalize(point.velocity) * maxVelocity;
+        }
         if (point.isFixed) {
             point.velocity = glm::vec3(0);
         }
@@ -130,6 +133,9 @@ void Scene4::oneStepMidpoint() {
 
         // compute velocity_tmp at t + deltaTime / 2
         point.velocity_tmp = point.velocity + point.acceleration * deltaTime / 2.0f;
+        if (glm::length(point.velocity_tmp) > maxVelocity) {
+            point.velocity_tmp = glm::normalize(point.velocity_tmp) * maxVelocity;
+        }
         if (point.isFixed) {
             point.velocity_tmp = glm::vec3(0);
         }
@@ -156,6 +162,12 @@ void Scene4::oneStepMidpoint() {
     for (Point4& point : pointsMidpoint) {
         point.acceleration += glm::vec3(0, 0, gravity) - damping * point.velocity_tmp / mass;
         point.velocity += point.acceleration * deltaTime;
+        if (glm::length(point.velocity) > maxVelocity) {
+            point.velocity = glm::normalize(point.velocity) * maxVelocity;
+        }
+        if (point.isFixed) {
+            point.velocity = glm::vec3(0);
+        }
     }
 
     // detect collisions with collider
@@ -221,7 +233,7 @@ void Scene4::onGUI() {
     ImGui::SliderInt("Height", &height, 2, 50);
 
     ImGui::Text("Spring parameters");
-    ImGui::SliderFloat("Stiffness", &stiffness, 100.0f, 10000.0f);
+    ImGui::SliderFloat("Stiffness", &stiffness, 100.0f, 100000.0f);
     ImGui::SliderFloat("Rest length", &restLength, 0.1f, 1.0f);
 
     ImGui::Text("Point parameters");
@@ -230,6 +242,7 @@ void Scene4::onGUI() {
     ImGui::Text("Simulation parameters");
     ImGui::SliderFloat("Delta time", &deltaTime, 0.001f, 0.01f);
     ImGui::SliderFloat("Damping", &damping, 0.0f, 10.0f);
+    ImGui::SliderFloat("Maximal velocity", &maxVelocity, 10.0f, 1000.0f);
 
     auto initialize = ImGui::Button("Initialize");
     auto switchMethod = ImGui::Button("Switch between Euler and Midpoint");

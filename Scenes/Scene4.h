@@ -28,12 +28,13 @@ class Scene4 : public Scene {
     int width = 10;
     int height = 10;
 
-    float stiffness = 500.0f;
+    float stiffness = 10000.0f;
     float restLength = 0.5f;
-    float damping = 0.01f;
+    float damping = 10.0f;
     float mass = 1.0f;
     float gravity = -9.81f;
     float deltaTime = 0.001f;
+    float maxVelocity = 10.0f;
 
     bool useMidpoint = false;
 
