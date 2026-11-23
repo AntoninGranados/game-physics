@@ -21,9 +21,9 @@ private:
     enum Method { Euler, Midpoint, LeapFrog };
 
     float appTime = 0.0f, physicsTime = 0.0f;
-    float dt = 0.005f;
+    float dt = 0.002f;
     int method = Midpoint;
-    float stiffness = 200.0f;
+    float stiffness = 400.0f;
 
     const float boxHalfSize = 2.5f;
     glm::vec3 spherePos = glm::vec3(0);

@@ -14,8 +14,8 @@ void Scene4::init() {
     system.gravity = glm::vec3(0, 0, -9.81f);
     system.damping = 0.5f;
 
-    const int n = 16;
-    const float spacing = 0.25f;
+    const int n = 20;
+    const float spacing = 4.0 / n;
     const float totalMass = 64.0f;
 
     for (int j = 0; j < n; j++) {
@@ -57,26 +57,29 @@ void Scene4::init() {
 
 void Scene4::onDraw(Renderer& renderer) {
     renderer.drawWireCube(glm::vec3(0), glm::vec3(2 * boxHalfSize), glm::vec3(1));
-    renderer.drawSphere(spherePos, sphereRadius, glm::vec4(0.2f, 0.6f, 1, 1));
+    renderer.drawSphere(spherePos, sphereRadius, glm::vec4(0.2, 0.6, 1, 1));
 
     for (const Point& p : system.points) {
-        renderer.drawSphere(p.pos, 0.05f, p.fixed ? glm::vec4(1, 0, 0, 1) : glm::vec4(1, 0, 1, 1));
+        renderer.drawSphere(p.pos, 0.02f, p.fixed ? glm::vec4(1, 0.2, 0.2, 1) : glm::vec4(0.6, 1, 0.2, 1));
     }
 
     for (const Spring& s : system.springs) {
-        renderer.drawLine(system.points[s.p0].pos, system.points[s.p1].pos, glm::vec3(0, 1, 0));
+        renderer.drawLine(system.points[s.p0].pos, system.points[s.p1].pos, glm::vec3(0.6, 1, 0.2));
     }
 }
 
 void Scene4::onGUI() {
     ImGui::SliderFloat("DeltaTime", &dt, 0.001f, 0.1f, "%.3f", ImGuiSliderFlags_Logarithmic);
     ImGui::Combo("Method", &method, "Euler\0Midpoint\0Leap-Frog\0");
+    ImGui::SliderFloat3("Gravity", &system.gravity.x, -20.0f, 20.0f);
 
+    ImGui::SeparatorText("Physics");
     if (ImGui::SliderFloat("Stiffness", &stiffness, 10.0f, 2000.0f, "%.0f", ImGuiSliderFlags_Logarithmic)) {
         for (Spring& s : system.springs) s.stiffness = stiffness;
     }
     ImGui::SliderFloat("Damping", &system.damping, 0.0f, 5.0f);
-    ImGui::SliderFloat3("Gravity", &system.gravity.x, -20.0f, 20.0f);
+
+    ImGui::SeparatorText("Collision");
     ImGui::SliderFloat("Restitution", &restitution, 0.0f, 1.0f);
     ImGui::SliderFloat("Friction", &friction, 0.0f, 1.0f);
 }
